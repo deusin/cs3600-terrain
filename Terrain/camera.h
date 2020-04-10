@@ -13,6 +13,7 @@ static struct Camera_Movement
         up = false;
     float mouseXOffset = 0.0f;
     float mouseYOffset = 0.0f;
+    bool flyingMode = true;
 } CamMove;
 
 constexpr float MAXLOOKANGLE = 60.0f;
@@ -97,8 +98,6 @@ public:
 
 
     }
-
-private:
     // Calculates the front vector from the Camera's (updated) Euler Angles
     void updateCameraVectors()
     {
@@ -113,5 +112,7 @@ private:
         Up = glm::normalize(glm::cross(Right, Front));
 
     }
+private:
+
 
 };

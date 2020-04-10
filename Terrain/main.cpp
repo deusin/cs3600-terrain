@@ -14,6 +14,7 @@ bool loopExit = false;
 int timeSinceStart;
 int oldTimeSinceStart = 0;
 int deltaTime;
+int waterLevel = 0;
 Camera* camera;
 double maxHeight = 2000;
 double eye[3] = { 4500, 8000, -4000 }; // pick a nice vantage point.
@@ -55,7 +56,7 @@ double yScale(double x, double z)
     return y * yScale;
 }
 
-void drawWaterLine(int waterLevel)
+void drawWaterLine()
 {
     glm::vec3 bl, br, tl, tr;
     bl.x = 0;
@@ -162,7 +163,7 @@ void display(void)
     );
 
     // Draw our water line
-    drawWaterLine(0);
+    drawWaterLine();
 
     // Draw a square to move around
     for (size_t i = 0; i < sizeX; i++)
@@ -206,7 +207,7 @@ void reshape(int w, int h)
 
 }
 
-
+#pragma region Keyboard
 void asciiKeyboardDown(unsigned char c, int x, int y)
 {
     switch (c)
@@ -260,6 +261,9 @@ void asciiKeyboardUp(unsigned char c, int x, int y)
     case 'd':
         CamMove.right = false;
         break;
+    case 'f':
+        CamMove.flyingMode = !CamMove.flyingMode;
+        break;
     default:
         return; // if we don't care, return without glutPostRedisplay()
     }
@@ -308,7 +312,10 @@ void mousePassiveMove(int x, int y)
 
     //std::cout << "At: " << x << ", " << y << "\n";
     CamMove.mouseXOffset = xoffset;
-    CamMove.mouseYOffset = yoffset;
+    if (CamMove.flyingMode)
+    {
+        CamMove.mouseYOffset = yoffset;
+    }
 }
 
 void mouseWheel(int wheel, int direction, int x, int y)
@@ -349,6 +356,39 @@ void InitializeMyStuff()
 void update(int deltaTime)
 {
     camera->Update(deltaTime);
+
+
+    // If in flying mode, snap to x units above the ground at this position
+    if (!CamMove.flyingMode)
+    {
+        double newYPosition = yScale(camera->Position.x, camera->Position.z);
+        if (newYPosition < waterLevel)
+        {
+            newYPosition = waterLevel;
+        }
+        camera->Position.y = newYPosition + 100;
+
+        double frontYPosition = yScale(camera->Position.x + camera->Front.x, camera->Position.z + camera->Front.z);
+        if (frontYPosition < waterLevel)
+        {
+            frontYPosition = waterLevel;
+        }
+
+        // Testing
+        if (newYPosition == frontYPosition)
+        {
+            camera->Pitch = 0;
+            camera->updateCameraVectors();
+        }
+        else
+        {
+            double newPitch = atan((frontYPosition - newYPosition) / 1.0) * 180 / 3.14;
+            
+            camera->Pitch = newPitch;
+            camera->updateCameraVectors();
+        }
+
+    }
 
     double t = GetTime();
 }
